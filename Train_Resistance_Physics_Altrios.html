@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Train Resistance Physics in Altrios</title>
+    <style>
+        body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 20px;
+        }
+        .formula {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            text-align: center;
+        }
+        .code-file {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-left: 3px solid #95a5a6;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        ul {
+            margin: 10px 0;
+        }
+        li {
+            margin: 5px 0;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        strong {
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .note {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 10px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Train Resistance Physics in Altrios</h1>
+    
+    <h2>Overview</h2>
+    <p>Altrios calculates train resistance forces using the <strong>Modified Davis Equation</strong>, which determines how much resistive force acts against a train's motion. This resistance directly impacts fuel consumption because the locomotive must generate enough power to overcome these forces.</p>
+    
+    <h2>The Complete Resistance Formula</h2>
+    <p>The complete train resistance formula is:</p>
+    
+    <div class="formula">
+        R = A + BV + CV² + 20G + 0.8c
+    </div>
+    
+    <p><strong>Where:</strong></p>
+    <ul>
+        <li><strong>R</strong> = total resistance in lbs per ton</li>
+        <li><strong>A</strong> = rolling resistance (constant)</li>
+        <li><strong>B</strong> = bearing/mechanical resistance coefficient</li>
+        <li><strong>V</strong> = velocity (speed)</li>
+        <li><strong>C</strong> = aerodynamic drag coefficient</li>
+        <li><strong>G</strong> = grade in percent</li>
+        <li><strong>c</strong> = curvature in degrees</li>
+    </ul>
+    
+    <h2>Code Location</h2>
+    <p>All resistance calculations are located in:</p>
+    <div class="code-file">altrios-core/src/train/resistance/</div>
+    
+    <p>This directory contains:</p>
+    <ul>
+        <li><code>kind/</code> - Individual resistance component implementations</li>
+        <li><code>method/</code> - Methods for combining resistances (Point vs Strap)</li>
+        <li><code>mod.rs</code> - Main resistance trait and wrapper</li>
+    </ul>
+    
+    <h2>Resistance Components Breakdown</h2>
+    
+    <h3>1. Rolling Resistance (A term)</h3>
+    <p><strong>Physics:</strong> Constant resistance from wheel-rail contact, independent of speed.</p>
+    <p><strong>Code File:</strong> <code>rolling.rs</code></p>
+    <div class="formula">F_rolling = ratio × weight</div>
+    <p><strong>Typical value:</strong> 1.5 lb/ton</p>
+    
+    <h3>2. Bearing Resistance (part of A term)</h3>
+    <p><strong>Physics:</strong> Constant friction from axle bearings.</p>
+    <p><strong>Code File:</strong> <code>bearing.rs</code></p>
+    <div class="formula">F_bearing = constant force</div>
+    <p><strong>Typical value:</strong> 4,000 lbf (40 cars × 100 lbf)</p>
+    
+    <h3>3. Davis B Term (BV term)</h3>
+    <p><strong>Physics:</strong> Speed-dependent mechanical resistance, linear with velocity.</p>
+    <p><strong>Code File:</strong> <code>davis_b.rs</code></p>
+    <div class="formula">F_davis_b = B × velocity × weight</div>
+    <p><strong>Typical value:</strong> 0.03 (lb/ton)/(mph)</p>
+    
+    <h3>4. Aerodynamic Resistance (CV² term)</h3>
+    <p><strong>Physics:</strong> Air drag, proportional to velocity squared.</p>
+    <p><strong>Code File:</strong> <code>aerodynamic.rs</code></p>
+    <div class="formula">F_aero = C_d × A × ρ_air × velocity²</div>
+    <p><strong>Where:</strong></p>
+    <ul>
+        <li>C_d × A = drag coefficient × frontal area</li>
+        <li>ρ_air = air density</li>
+    </ul>
+    <div class="note">
+        <strong>Note:</strong> The traditional factor of 0.5 in the drag equation is lumped into the coefficient.
+    </div>
+    
+    <h3>5. Grade Resistance (20G term)</h3>
+    <p><strong>Physics:</strong> Gravitational force component pulling the train down (or up) a slope.</p>
+    <p><strong>Code File:</strong> <code>path_res.rs</code></p>
+    <div class="formula">F_grade = grade × weight</div>
+    
+    <p><strong>Physics derivation:</strong></p>
+    <ul>
+        <li>F_G = W × sin(A) where A is slope angle</li>
+        <li>For small angles: sin(A) ≈ tan(A) = G (grade)</li>
+        <li>Result: F_G = W × G</li>
+        <li>For 1% grade: F_G = 0.01W = 20 lbs per ton</li>
+    </ul>
+    
+    <div class="note">
+        <strong>Key insight:</strong> The "20G" in the formula means 20 pounds per ton per percent grade.
+    </div>
+    
+    <h3>6. Curve Resistance (0.8c term)</h3>
+    <p><strong>Physics:</strong> Additional resistance from wheel flanges rubbing against rails on curves.</p>
+    <p><strong>Code File:</strong> <code>path_res.rs</code> (same as grade resistance)</p>
+    <div class="formula">F_curve = curve_coeff × weight</div>
+    <div class="note">
+        <strong>Note:</strong> The "0.8c" means 0.8 pounds per ton per degree of curvature.
+    </div>
+    
+    <h2>How Resistances Are Combined</h2>
+    <p>All resistance forces are summed to get total net resistance:</p>
+    <p><strong>Code File:</strong> <code>train_state.rs</code> (res_net function)</p>
+    
+    <div class="formula">
+        res_net = res_rolling + res_bearing + res_davis_b + res_aero + res_grade + res_curve
+    </div>
+    
+    <p>This matches the formula: <strong>R = A + BV + CV² + 20G + 0.8c</strong></p>
+    
+    <p><strong>Where:</strong></p>
+    <ul>
+        <li><strong>A</strong> = res_rolling + res_bearing</li>
+        <li><strong>BV</strong> = res_davis_b</li>
+        <li><strong>CV²</strong> = res_aero</li>
+        <li><strong>20G</strong> = res_grade</li>
+        <li><strong>0.8c</strong> = res_curve</li>
+    </ul>
+    
+    <h2>Connection to Fuel Consumption</h2>
+    <p>The total resistance force determines the power required to maintain speed:</p>
+    
+    <div class="formula">Power = Force × Velocity</div>
+    
+    <p>The locomotive must generate this power, which directly translates to fuel consumption:</p>
+    <ul>
+        <li><strong>Higher resistance</strong> → More power needed → More fuel burned</li>
+        <li><strong>Grades and curves</strong> dramatically increase resistance</li>
+        <li><strong>Speed</strong> affects aerodynamic (V²) and Davis B (V) terms significantly</li>
+    </ul>
+    
+    <h2>Example Calculation</h2>
+    <p><strong>Scenario:</strong> 100 loaded 110-ton cars (143 tons each loaded) at 10 mph on 0.76% grade and 6-degree curve</p>
+    
+    <p><strong>Calculation breakdown:</strong></p>
+    <ul>
+        <li><strong>A term</strong> (rolling + bearing): ~18,700 lbs (from straight, level track)</li>
+        <li><strong>BV term:</strong> Minimal at 10 mph</li>
+        <li><strong>CV² term:</strong> Very small at 10 mph</li>
+        <li><strong>20G term:</strong> 20 × 0.76 × 14,300 tons = ~217,000 lbs</li>
+        <li><strong>0.8c term:</strong> 0.8 × 6 × 14,300 tons = ~68,600 lbs</li>
+    </ul>
+    
+    <p class="highlight"><strong>Conclusion:</strong> The grade and curve terms dominate at low speeds on challenging terrain!</p>
+    
+    <h2>Key Files Reference</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>File</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Rolling Resistance</td>
+                <td>rolling.rs</td>
+            </tr>
+            <tr>
+                <td>Bearing Resistance</td>
+                <td>bearing.rs</td>
+            </tr>
+            <tr>
+                <td>Davis B Term</td>
+                <td>davis_b.rs</td>
+            </tr>
+            <tr>
+                <td>Aerodynamic</td>
+                <td>aerodynamic.rs</td>
+            </tr>
+            <tr>
+                <td>Grade/Curve</td>
+                <td>path_res.rs</td>
+            </tr>
+            <tr>
+                <td>Total Resistance</td>
+                <td>train_state.rs</td>
+            </tr>
+            <tr>
+                <td>Orchestration</td>
+                <td>point.rs</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <h2>Summary</h2>
+    <p>Altrios implements the complete Modified Davis Equation for train resistance. Each term is calculated separately and summed to get total resistance. This total resistance force determines the power requirement, which directly drives fuel consumption calculations. The modular design allows each resistance component to be independently configured and validated.</p>
+    
+    <hr>
+    <p style="text-align: center; color: #7f8c8d; font-size: 12px; margin-top: 40px;">
+        Generated from Altrios codebase analysis - December 2025
+    </p>
+</body>
+</html>
