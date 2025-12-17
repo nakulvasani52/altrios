@@ -1,0 +1,18 @@
+---
+- max_grade: 0.25
+  max_curv_radians_per_meter: 0.020
+  max_heading_step_radians: 0.24
+  max_elev_step_meters: 0.0
+- - idx_curr: 0
+    idx_flip: 0
+    idx_next: 0
+    idx_next_alt: 0
+    idx_prev: 0
+    idx_prev_alt: 0
+    osm_id: "henderson_242_252"
+    length_meters: 17700.0
+    elevs: []
+    headings: []
+    speed_set: ~
+    cat_power_limits: []
+    link_idxs_lockout: []
