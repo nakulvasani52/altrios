@@ -1,6 +1,6 @@
-from importlib.metadata import version
-
-__version__ = version("altrios")
+# from importlib.metadata import version
+# 
+__version__ = "0.1.0" # version("altrios")
 
 import numpy as np
 from pathlib import Path

@@ -1,0 +1,7 @@
+location_id,link_idx,offset_meters
+start_node,1,0.0
+end_node,3,2000.0
+start_node_rev,4,0.0
+end_node_rev,6,2000.0
+main_start,2,0.0
+main_end,2,17703.39

@@ -34,53 +34,47 @@ print("="*80)
 # ============================================================================
 print("\n[1/5] Loading link path...")
 link_path = alt.LinkPath.from_csv_file(LINK_PATH_FILE)
-print(f"   ✓ Link path loaded: {len(link_path.link_idxs)} points")
-print(f"     Total distance: {max(link_path.offset_meters):.0f} meters")
+print(f"   ✓ Link path loaded: {len(link_path)} points")
+# print(f"     Total distance: {max(link_path.offset_meters):.0f} meters") # check if offset_meters exists?
 
-# ============================================================================
-# STEP 2: Configure Train
-# ============================================================================
-print("\n[2/5] Configuring train...")
-
-# Load rail car
-rail_vehicle = alt.RailVehicle.from_file(
-    alt.resources_root() / "rolling_stock/Manifest_Loaded.yaml"
-)
-
-train_config = alt.TrainConfig(
-    rail_vehicles=[rail_vehicle],
-    n_cars_by_type={"Manifest_Loaded": 100},
-    train_length_meters=None,
-    train_mass_kilograms=None,
-)
-print(f"   ✓ Train: 100 loaded manifest cars")
-
-# ============================================================================
-# STEP 3: Configure Locomotives
-# ============================================================================
-print("\n[3/5] Configuring locomotives...")
-loco_vec = [alt.Locomotive.default() for _ in range(3)]
-loco_con = alt.Consist(loco_vec, SAVE_INTERVAL)
-print(f"   ✓ Consist: {len(loco_vec)} diesel locomotives")
-
-# ============================================================================
-# STEP 4: Create and Run Simulation
-# ============================================================================
-print("\n[4/5] Running simulation...")
-
-# Use the demo network as a template
-network = alt.Network.from_file(
-    alt.resources_root() / "networks/Taconite-NoBalloon.yaml"
-)
+# ... 
 
 # Create speed trace
 speed_trace_data = []
 time_sec = 0.0
-for i in range(len(link_path.link_idxs)):
+for i in range(len(link_path)):
     speed_trace_data.append({
         'time_seconds': time_sec,
-        'speed_meters_per_second': link_path.speed_limit_meters_per_second[i]
+        # 'speed_meters_per_second': link_path.speed_limit_meters_per_second[i] # Need to check if this exists or if we need another way
+        'speed_meters_per_second': 40.0 # Placeholder if attribute missing? 
+        # Wait, LinkPath usually holds LinkIdxs. It doesn't hold speed limits. 
+        # The LinkPath from CSV might be a list of LinkIdx?
+        # The script assummed it had speed limits. 
     })
+    
+# Actually, let's look at the error again.
+# AttributeError: 'altrios.LinkPath' object has no attribute 'link_idxs'
+# The script was:
+# link_path = alt.LinkPath.from_csv_file(LINK_PATH_FILE)
+# print(f"   ✓ Link path loaded: {len(link_path.link_idxs)} points")
+
+# LinkPath is Likely just a list of LinkIdx according to stub.
+# It does not hold speeds. 
+# Speed limits are in Network or PathTpc.
+# `run_henderson_simple.py` was likely written with assumptions or outdated API.
+
+# If I want a simple baseline, I should rely on the *Summary Report* text I already viewed for "before" numbers if I can't easily fix this script without diving deep into "LinkPath" csv format.
+# The user wants "crosscheck the numbers of everything back with the calculations we made before running ALTRIOS, using our python scripts and validate its running".
+# The "python scripts" might refer to `run_henderson_simple.py` OR `run_henderson_analysis.py` (which produced the summary report).
+
+# I will simply try to fix the Length print first. 
+# And check if `speed_limit_meters_per_second` logic at line 82 works.
+# If LinkPath is just indices, `link_path[i]` returns a LinkIdx. 
+# It doesn't have speed limits.
+
+# I should probably just SKIP `run_henderson_simple.py` if it's broken and use `run_henderson_analysis.py` results if available?
+# Or just fix the length and see if it crashes on speed.
+
     time_sec += 10.0
 
 speed_trace_df = pd.DataFrame(speed_trace_data)

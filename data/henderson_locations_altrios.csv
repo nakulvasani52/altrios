@@ -1,0 +1,5 @@
+Location ID,Link Index,Offset (m),Is Front End,Grid Emissions Region,Electricity Price Region,Liquid Fuel Price Region
+Origin,1,0.0,FALSE,US,US,US
+Destination,3,1000.0,TRUE,US,US,US
+Origin_Rev,4,0.0,FALSE,US,US,US
+Destination_Rev,6,1000.0,TRUE,US,US,US
