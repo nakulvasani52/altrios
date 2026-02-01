@@ -1,0 +1,43 @@
+1. Time & Position
+history.time_seconds – Simulation time (seconds)
+history.dt_seconds – Time step size
+history.i – Step index
+history.total_dist_meters – Total distance traveled
+history.offset_meters – Front position of train
+history.offset_back_meters – Rear position of train 
+history.link_idx_front / history.link_idx_back – Track segment index under front and rear
+history.offset_in_link_meters – Position within the current track link
+
+2. Speed & Targets
+history.speed_meters_per_second – Actual train speed
+history.speed_limit_meters_per_second – Speed constraint imposed by track or rules
+history.speed_target_meters_per_second – Target speed set by controller
+
+3. Forces (Resistance Breakdown)
+history.res_grade_newtons – Resistance due to grade (gravity/slope)
+history.res_curve_newtons – Resistance due to track curvature
+history.res_rolling_newtons – Rolling resistance (wheel–rail contact)
+history.res_bearing_newtons – Bearing resistance (axle friction, constant)
+history.res_aero_newtons – Aerodynamic resistance (quadratic with speed)
+history.res_davis_b_newtons – Linear speed-dependent resistance (Davis equation B-term)
+fric_brake.history.force_newtons – Mechanical braking force applied
+fric_brake.history.force_max_curr_newtons – Maximum available braking force at current state
+
+4. Power & Energy
+history.pwr_whl_out_watts – Net power at the wheel (+traction, −braking)
+history.pwr_res_watts – Power required to overcome resistances
+history.pwr_accel_watts – Power used for acceleration
+history.energy_whl_out_joules – Net wheel energy
+history.energy_whl_out_pos_joules – Total traction energy consumed
+history.energy_whl_out_neg_joules – Total regenerative energy captured
+
+5. Mass & Weight
+history.mass_static_kilograms – Total static train mass
+history.mass_freight_kilograms – Payload (freight) mass
+history.mass_rot_kilograms – Rotational inertia equivalent mass
+history.weight_static_newtons – Total static weight of the train
+
+6. Track Geometry State
+history.grade_front / history.grade_back – Instantaneous track grade (%) under front and rear of train
+history.elev_front_meters / history.elev_back_meters – Elevation at front and rear of train
+history.length_meters – Length of the current track link
