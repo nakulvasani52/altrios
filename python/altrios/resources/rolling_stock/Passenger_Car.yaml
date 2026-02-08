@@ -1,0 +1,18 @@
+---
+car_type: Passenger_Car
+freight_type: Passenger
+length_meters: 26.0
+axle_count: 4
+brake_count: 1
+mass_static_base_kilograms: 65000.0
+mass_freight_kilograms: 5000.0 # Passengers + Luggage
+speed_max_meters_per_second: 45.0 # ~100 mph
+braking_ratio: 0.12
+mass_rot_per_axle_kilograms: 500.0
+bearing_res_per_axle_newtons: 8.0
+rolling_ratio: 0.0005
+davis_b_seconds_per_meter: 0.00005
+cd_area_square_meters: 2.5
+curve_coeff_0: 0.04
+curve_coeff_1: 0.3
+curve_coeff_2: 0.005
