@@ -7,14 +7,15 @@ from pathlib import Path
 plt.rcParams.update({
     "figure.dpi": 140,
     "savefig.dpi": 300,
+    "font.family": "Arial",
     "font.size": 12,
     "axes.titlesize": 15,
     "axes.labelsize": 13,
     "legend.fontsize": 11,
     "xtick.labelsize": 11,
     "ytick.labelsize": 11,
-    "axes.grid": True,
-    "grid.alpha": 0.22,
+    "axes.grid": False,
+    "grid.alpha": 0.0,
     "figure.facecolor": "white",
     "axes.facecolor": "white",
 })
@@ -456,6 +457,84 @@ def plot_demand_purple_style(meeting_df, direction="NB", save=True):
         fig.savefig(fname, bbox_inches="tight")
         print("Saved:", fname)
 
+def plot_stacked_geometry_speed(meeting_df, direction="NB", save=True):
+    """Stacked 2-panel chart: Infrastructure Geometry (curve + grade) on top,
+    Speed Profile (filled area) on bottom. Mirrors the reference image."""
+    d = meeting_df[meeting_df["direction"] == direction].sort_values("mp_group").copy()
+    x = d["mp_group"].values
+    curve = d["true_curve_deg"].astype(float).values
+    grade = d["true_grade_pct"].astype(float).values
+    speed = d["speed_mph"].astype(float).values
+
+    fig, (ax_top, ax_bot) = plt.subplots(
+        2, 1,
+        figsize=(13, 5.2),
+        sharex=True,
+        gridspec_kw={"height_ratios": [1.4, 1], "hspace": 0.42}
+    )
+
+    FS_TITLE  = 16
+    FS_LABEL  = 14
+    FS_TICK   = 12
+    FS_LEGEND = 12
+
+    C_CURVE = (1.0, 0.0, 0.0)          # RGB 255,0,0   — Curvature
+    C_GRADE = (0.0, 0.0, 1.0)          # RGB 0,0,255   — Grade
+    C_SPEED = (1.0, 0.6, 0.0)          # RGB 255,153,0 — Speed
+
+    # ── Top panel: Curvature (left axis) + Grade (right axis) ────────────────
+    curve_abs = np.abs(curve)
+    ax_top.plot(x, curve_abs, color=C_CURVE, linewidth=2.2, label="Curvature (Deg)")
+    ax_top.set_ylabel("Curvature (Deg)", fontweight="bold", fontsize=FS_LABEL, color=C_CURVE)
+    ax_top.set_ylim(0, max(float(np.nanmax(curve_abs)) * 1.25, 1.0))
+    ax_top.tick_params(axis="y", labelsize=FS_TICK, colors=C_CURVE)
+    ax_top.tick_params(axis="x", labelsize=FS_TICK)
+    ax_top.spines["left"].set_color(C_CURVE)
+    ax_top.set_title(
+        f"Infrastructure Geometry (MP {MP_MIN:.0f}\u2013{MP_MAX:.0f})",
+        fontsize=FS_TITLE, fontweight="bold", pad=6
+    )
+
+    ax_top2 = ax_top.twinx()
+    ax_top2.step(x, grade, where="mid", color=C_GRADE, linewidth=2.0, label="Grade (%)")
+    ax_top2.set_ylabel("Grade (%)", fontweight="bold", fontsize=FS_LABEL, color=C_GRADE)
+    ax_top2.tick_params(axis="y", labelsize=FS_TICK, colors=C_GRADE)
+    ax_top2.spines["right"].set_color(C_GRADE)
+    g_min = float(np.nanmin(grade))
+    g_max = float(np.nanmax(grade))
+    pad = max(abs(g_min), abs(g_max)) * 0.25
+    ax_top2.set_ylim(g_min - pad, g_max + pad)
+
+    ax_top.spines["top"].set_alpha(0.3)
+    ax_top.grid(False)
+
+
+
+    # ── Bottom panel: Speed filled area ──────────────────────────────────────
+    ax_bot.fill_between(x, speed, color=C_SPEED, alpha=0.35)
+    ax_bot.plot(x, speed, color=C_SPEED, linewidth=2.0)
+    ax_bot.set_title("Speed Profile", fontsize=FS_TITLE, fontweight="bold", pad=6)
+    ax_bot.set_ylabel("Speed (mph)", fontweight="bold", fontsize=FS_LABEL)
+    ax_bot.set_xlabel("Milepost", fontweight="bold", fontsize=FS_LABEL)
+    ax_bot.set_ylim(0, max(float(np.nanmax(speed)) * 1.18, 10.0))
+    ax_bot.tick_params(axis="both", labelsize=FS_TICK)
+    ax_bot.spines["top"].set_alpha(0.3)
+    ax_bot.grid(False)
+
+    # Shared x limits
+    if direction == "SB":
+        ax_top.set_xlim(MP_MAX, MP_MIN)
+    else:
+        ax_top.set_xlim(MP_MIN, MP_MAX)
+
+    fig.tight_layout()
+    if save:
+        fname = OUT_DIR / f"henderson_{direction.lower()}_stacked_geometry_speed.png"
+        fig.savefig(fname, bbox_inches="tight")
+        print("Saved:", fname)
+    return fig
+
+
 def plot_final_4_panel_stack(meeting_df, save=True):
     nb = meeting_df[meeting_df["direction"]=="NB"].sort_values("mp_group").copy()
     sb = meeting_df[meeting_df["direction"]=="SB"].sort_values("mp_group").copy()
@@ -498,8 +577,110 @@ def plot_final_4_panel_stack(meeting_df, save=True):
         fig.savefig(fname, bbox_inches="tight")
         print("Saved:", fname)
 
+def plot_braking_and_wheel_power(save=True):
+    """2-panel slide chart: Braking Force Breakdown (top) + Loco Wheel Power (bottom).
+    Loads the heavy NB simulation CSV directly."""
+    from scipy.ndimage import gaussian_filter1d
+
+    CSV = "results/henderson_nb_braking.csv"
+    df = pd.read_csv(CSV)
+
+    # ── Derived quantities (same methodology as analyze_nb_braking.py) ────────
+    BUFFER_M = 50_000
+    df["milepost"] = (df["total_dist_meters"] - BUFFER_M) / 1609.34 + 242
+    df = df[(df["milepost"] >= 242) & (df["milepost"] <= 252.5)].copy().reset_index(drop=True)
+
+    df["speed_mps"] = df["speed_meters_per_second"]
+    df["accel_ms2"] = gaussian_filter1d(
+        (df["speed_mps"].diff() / df["dt_seconds"]).fillna(0).values, sigma=3
+    )
+    df["F_res_N"] = (
+        df["res_grade_newtons"] + df["res_curve_newtons"] +
+        df["res_rolling_newtons"] + df["res_aero_newtons"] + df["res_bearing_newtons"]
+    )
+    df["F_net_N"] = df["mass_static_kilograms"] * df["accel_ms2"] + df["F_res_N"]
+    df["F_dyn_N"] = np.where(
+        df["pwr_whl_out_watts"] < 0,
+        np.abs(df["pwr_whl_out_watts"]) / np.maximum(df["speed_mps"], 1.0),
+        0.0
+    )
+    df["F_air_N"] = np.maximum(0, -(df["F_net_N"] + df["F_dyn_N"]))
+    df["F_dyn_kN"] = gaussian_filter1d(df["F_dyn_N"].values, sigma=2) / 1000
+    df["F_air_kN"] = gaussian_filter1d(df["F_air_N"].values, sigma=2) / 1000
+    df["pwr_MW"]   = df["pwr_whl_out_watts"] / 1e6
+
+    x = df["milepost"].values
+
+    # ── Colors ────────────────────────────────────────────────────────────────
+    C_DYN   = (1.0, 0.0, 0.0)          # red   — Dynamic
+    C_AIR   = (0.0, 0.0, 1.0)          # blue  — Air
+    C_PWR   = (0.8, 0.6, 0.0)          # mustard — Wheel power
+
+    FS_TITLE  = 16
+    FS_LABEL  = 14
+    FS_TICK   = 12
+    FS_LBL    = 12
+
+    fig, (ax1, ax2) = plt.subplots(
+        2, 1, figsize=(13, 5.2), sharex=True,
+        gridspec_kw={"height_ratios": [1.2, 1], "hspace": 0.42}
+    )
+
+    # ── Top: Braking Force Breakdown ──────────────────────────────────────────
+    ax1.plot(x, df["F_dyn_kN"], color=C_DYN, linewidth=2.0, label="Dynamic")
+    ax1.fill_between(x, 0, df["F_dyn_kN"], color=C_DYN, alpha=0.18)
+    ax1.plot(x, df["F_air_kN"], color=C_AIR, linewidth=2.0, label="Air")
+    ax1.fill_between(x, 0, df["F_air_kN"], color=C_AIR, alpha=0.18)
+    ax1.set_title(f"Braking Force Breakdown (MP {MP_MIN:.0f}\u2013{MP_MAX:.0f})",
+                  fontsize=FS_TITLE, fontweight="bold", pad=6)
+    ax1.set_ylabel("Force (kN)", fontweight="bold", fontsize=FS_LABEL)
+    ax1.tick_params(axis="both", labelsize=FS_TICK)
+    ax1.set_ylim(bottom=0)
+    ax1.set_ylim(bottom=0)
+    ax1.grid(False)
+    ax1.spines["top"].set_alpha(0.3)
+
+    # Inline labels — Dynamic near left peak, Air near right
+    d_idx = int(np.argmax(df["F_dyn_kN"].values[:len(x)//3]))  # first big dynamic peak
+    ax1.text(x[d_idx], df["F_dyn_kN"].iloc[d_idx] + df["F_dyn_kN"].max() * 0.07,
+             "Dynamic", color=C_DYN, fontsize=FS_LBL, fontweight="bold",
+             ha="center", va="bottom",
+             bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.75))
+    a_idx = int(len(x) * 0.82)
+    ax1.text(x[a_idx], df["F_air_kN"].iloc[a_idx] + df["F_air_kN"].max() * 0.07,
+             "Air", color=C_AIR, fontsize=FS_LBL, fontweight="bold",
+             ha="center", va="bottom",
+             bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.75))
+
+    # ── Bottom: Loco Wheel Power ───────────────────────────────────────────────
+    ax2.plot(x, df["pwr_MW"], color=C_PWR, linewidth=1.8)
+    ax2.fill_between(x, 0, df["pwr_MW"], where=(df["pwr_MW"] >= 0),
+                     color=C_PWR, alpha=0.35)
+    ax2.fill_between(x, 0, df["pwr_MW"], where=(df["pwr_MW"] < 0),
+                     color=C_PWR, alpha=0.55)
+    ax2.axhline(0, color="black", linewidth=0.8, linestyle="--", alpha=0.4)
+    ax2.set_title("Locomotive Wheel Power (Negative = Regenerative Braking)",
+                  fontsize=FS_TITLE, fontweight="bold", pad=6)
+    ax2.set_ylabel("Power (MW)", fontweight="bold", fontsize=FS_LABEL)
+    ax2.set_xlabel("Milepost", fontweight="bold", fontsize=FS_LABEL)
+    ax2.tick_params(axis="both", labelsize=FS_TICK)
+    ax2.tick_params(axis="both", labelsize=FS_TICK)
+    ax2.grid(False)
+    ax2.spines["top"].set_alpha(0.3)
+
+    ax1.set_xlim(MP_MIN, MP_MAX)
+
+    fig.tight_layout()
+    if save:
+        fname = OUT_DIR / "henderson_nb_braking_wheel_power.png"
+        fig.savefig(fname, bbox_inches="tight")
+        print("Saved:", fname)
+    return fig
+
+
 if __name__ == "__main__":
     df = load_and_bin_data()
+    plot_stacked_geometry_speed(df)          # NEW: stacked geometry + speed
     plot_curve_grade_single(df)
     plot_final_4_panel_stack(df)
     
