@@ -35,10 +35,10 @@ GREEN  = "#2ca02c"
 RED    = "#d62728"
 PURPLE = "#9467bd"
 
-SIM_CSV  = Path("results/henderson_full_sim/nb_simulation.csv")
-SEG_CSV  = Path("data/nvasani2_altrios_segments_henderson_sim_run")
-META_FILE = Path("data/henderson_full_meta.json")
-OUT_DIR  = Path("results/henderson_full_sim")
+SIM_CSV  = Path("results/henderson_sb_sim/sb_simulation.csv")
+SEG_CSV  = Path("data/henderson_sb_segments.csv")
+META_FILE = Path("data/henderson_sb_meta.json")
+OUT_DIR  = Path("results/henderson_sb_sim")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── Load metadata ────────────────────────────────────────────────────────────
@@ -163,7 +163,7 @@ def plot_full_4panel(sim_df, geo_df, xlim, train_info):
     ax1.set_ylim(0, max(float(np.nanmax(curve_abs)) * 1.25, 1.0))
     ax1.tick_params(axis="y", labelsize=FS_TICK, colors=C_CURVE)
     ax1.set_title(
-        f"Henderson Subdivision NB: Infrastructure Geometry (MP {xlim[0]:.0f}–{xlim[1]:.0f}) | {train_info}",
+        f"Henderson Subdivision SB: Infrastructure Geometry (MP {xlim[1]:.0f}–{xlim[0]:.0f}) | {train_info}",
         fontsize=FS_TITLE, fontweight="bold", pad=6)
 
     ax1b = ax1.twinx()
@@ -208,9 +208,10 @@ def plot_full_4panel(sim_df, geo_df, xlim, train_info):
     ax4.spines["top"].set_alpha(0.3)
 
     ax1.set_xlim(*xlim)
+    ax1.invert_xaxis()
 
     fig.tight_layout()
-    fname = OUT_DIR / "henderson_full_nb_4panel_strip.png"
+    fname = OUT_DIR / "henderson_full_sb_4panel_strip.png"
     fig.savefig(fname, bbox_inches="tight")
     print(f"Saved: {fname}")
     return fig
@@ -238,7 +239,7 @@ def plot_geometry_speed(sim_df, geo_df, xlim, train_info):
     ax_top.set_ylim(0, max(float(np.nanmax(curve_abs)) * 1.25, 1.0))
     ax_top.tick_params(axis="y", colors=C_CURVE)
     ax_top.set_title(
-        f"Infrastructure Geometry (MP {xlim[0]:.0f}–{xlim[1]:.0f}) | {train_info}",
+        f"Infrastructure Geometry (MP {xlim[1]:.0f}–{xlim[0]:.0f}) | {train_info}",
         fontsize=FS_TITLE, fontweight="bold")
 
     ax_top2 = ax_top.twinx()
@@ -256,8 +257,9 @@ def plot_geometry_speed(sim_df, geo_df, xlim, train_info):
     ax_bot.set_ylim(0, max(float(np.nanmax(speed)) * 1.18, 10.0))
 
     ax_top.set_xlim(*xlim)
+    ax_top.invert_xaxis()
     fig.tight_layout()
-    fname = OUT_DIR / "henderson_full_nb_geometry_speed.png"
+    fname = OUT_DIR / "henderson_full_sb_geometry_speed.png"
     fig.savefig(fname, bbox_inches="tight")
     print(f"Saved: {fname}")
 
@@ -275,15 +277,16 @@ def plot_resistance_stacked(sim_df, xlim, train_info):
                  labels=['Grade', 'Curve', 'Rolling', 'Aero'],
                  alpha=0.65, colors=[BLUE, RED, PURPLE, GREEN])
     ax.set_title(
-        f"Henderson NB: Resistance Force Breakdown (MP {xlim[0]:.0f}–{xlim[1]:.0f}) | {train_info}",
+        f"Henderson SB: Resistance Force Breakdown (MP {xlim[1]:.0f}–{xlim[0]:.0f}) | {train_info}",
         fontsize=16, fontweight="bold")
     ax.set_xlabel("Milepost", fontweight="bold", fontsize=14)
     ax.set_ylabel("Resistance Forces (kN)", fontweight="bold", fontsize=14)
     ax.set_xlim(*xlim)
+    ax.invert_xaxis()
     ax.legend(loc="upper left", frameon=True, fontsize=11, ncol=2)
 
     fig.tight_layout()
-    fname = OUT_DIR / "henderson_full_nb_resistance_stacked.png"
+    fname = OUT_DIR / "henderson_full_sb_resistance_stacked.png"
     fig.savefig(fname, bbox_inches="tight")
     print(f"Saved: {fname}")
 
@@ -309,16 +312,17 @@ def plot_demand(sim_df, xlim, train_info):
                           alpha=0.9, lw=0.5))
 
     ax.set_title(
-        f"Henderson NB: Track Longitudinal Demand (MP {xlim[0]:.0f}–{xlim[1]:.0f}) | {train_info}",
+        f"Henderson SB: Track Longitudinal Demand (MP {xlim[1]:.0f}–{xlim[0]:.0f}) | {train_info}",
         fontsize=16, fontweight="bold")
     ax.set_xlabel("Milepost", fontweight="bold", fontsize=14)
     ax.set_ylabel("Track Demand (kN)", fontweight="bold", fontsize=14)
     ax.set_xlim(*xlim)
+    ax.invert_xaxis()
     ax.set_ylim(*_sym_ylim(demand))
     ax.legend(loc="upper right", frameon=True, fontsize=11)
 
     fig.tight_layout()
-    fname = OUT_DIR / "henderson_full_nb_track_demand.png"
+    fname = OUT_DIR / "henderson_full_sb_track_demand.png"
     fig.savefig(fname, bbox_inches="tight")
     print(f"Saved: {fname}")
 
@@ -328,7 +332,7 @@ if __name__ == "__main__":
     sim_df = load_sim_data()
     geo_df = load_true_geometry()
 
-    # Update MP_MAX based on actual simulated data to remove whitespace
+    # Update limits based on actual simulated data to remove whitespace
     sim_min_mp = sim_df['mp_group'].min()
     sim_max_mp = sim_df['mp_group'].max()
     xlim = (sim_min_mp - 0.5, sim_max_mp + 0.5)

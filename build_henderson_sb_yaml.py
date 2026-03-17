@@ -14,8 +14,8 @@ import os
 import yaml
 
 # Configuration
-INPUT_CSV = "data/nvasani2_altrios_segments_henderson_sim_run"
-OUTPUT_YAML = "data/henderson_full_network.yaml"
+INPUT_CSV = "data/henderson_sb_segments.csv"
+OUTPUT_YAML = "data/henderson_sb_network.yaml"
 
 def build_network():
     print(f"Reading {INPUT_CSV}...")
@@ -166,9 +166,9 @@ def build_network():
         'grid_dx_m': float(grid_dx),
     }
     import json
-    with open("data/henderson_full_meta.json", 'w') as f:
+    with open("data/henderson_sb_meta.json", 'w') as f:
         json.dump(meta, f, indent=2)
-    print(f"  ✓ Metadata saved to data/henderson_full_meta.json")
+    print(f"  ✓ Metadata saved to data/henderson_sb_meta.json")
 
 
 if __name__ == "__main__":

@@ -2,12 +2,12 @@
 """
 Run complete ALTRIOS simulation on full Henderson subdivision (MP 176.9 - 317.5).
 
-Pipeline:
-  1. Loads the full Henderson network YAML
-  2. Generates speed trace from per-segment speed limits (NB direction)
-  3. Configures a heavy freight train (100 loaded manifest, 4 locos)
-  4. Runs SetSpeedTrainSim
-  5. Extracts results, maps distance -> Milepost, saves CSV
+# Pipeline:
+#   1. Loads the full Henderson SB network YAML
+#   2. Generates speed trace from per-segment speed limits (SB direction)
+#   3. Configures a heavy freight train (100 loaded manifest, 4 locos)
+#   4. Runs SetSpeedTrainSim
+#   5. Extracts results, maps distance -> Milepost, saves CSV
 """
 
 import time
@@ -20,16 +20,16 @@ import altrios as alt
 import create_robust_loco
 
 # ── Configuration ────────────────────────────────────────────────────────────
-NETWORK_FILE   = Path("data/henderson_full_network.yaml")
-SEGMENTS_CSV   = Path("data/nvasani2_altrios_segments_henderson_sim_run")
-META_FILE      = Path("data/henderson_full_meta.json")
-OUTPUT_DIR     = Path("results/henderson_full_sim")
+NETWORK_FILE   = Path("data/henderson_sb_network.yaml")
+SEGMENTS_CSV   = Path("data/henderson_sb_segments.csv")
+META_FILE      = Path("data/henderson_sb_meta.json")
+OUTPUT_DIR     = Path("results/henderson_sb_sim")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 SAVE_INTERVAL = 1
 
 print("=" * 80)
-print("ALTRIOS Full Henderson Subdivision Simulation (NB)")
+print("ALTRIOS Full Henderson Subdivision Simulation (SB)")
 print("=" * 80)
 
 # ── 1. Load network ─────────────────────────────────────────────────────────
@@ -49,11 +49,11 @@ print(f"  MP range: {MP_MIN:.2f} – {MP_MAX:.2f}")
 print(f"  Main length: {MAIN_LENGTH:.0f} m ({MAIN_LENGTH/1609.34:.1f} mi)")
 
 # ── 2. Generate speed trace from segment data ───────────────────────────────
-print("\n[2/6] Generating speed trace from segment data...")
+print("\n[2/6] Generating SB speed trace from segment data...")
 seg = pd.read_csv(SEGMENTS_CSV)
 seg = seg[seg['TrackNumber'].isin(['SG', '1', '2'])].copy()
 seg = seg.sort_values(['beg_mp', 'TrackNumber']).drop_duplicates(subset=['beg_mp'], keep='first')
-seg = seg.sort_values('beg_mp').reset_index(drop=True)
+seg = seg.sort_values('beg_mp', ascending=False).reset_index(drop=True)
 
 # Build distance → speed mapping from the actual segment speed limits
 seg_dists = np.concatenate(([0.0], np.cumsum(seg['length_m'].to_numpy())))
@@ -106,14 +106,14 @@ trace_df = pd.DataFrame({
     'speed_meters_per_second': v_interp
 })
 
-trace_file = OUTPUT_DIR / "speed_trace_nb.csv"
+trace_file = OUTPUT_DIR / "speed_trace_sb.csv"
 trace_df.to_csv(trace_file, index=False)
 print(f"  ✓ Speed trace: {len(trace_df)} points, "
       f"{time_target[-1]/60:.0f} min total time")
 
-# Link path (single link for NB)
-lp_file = OUTPUT_DIR / "link_path_nb.csv"
-pd.DataFrame({'link_idx': [1]}).to_csv(lp_file, index=False)
+# Link path (Link index 2 for SB)
+lp_file = OUTPUT_DIR / "link_path_sb.csv"
+pd.DataFrame({'link_idx': [2]}).to_csv(lp_file, index=False)
 
 speed_trace = alt.SpeedTrace.from_csv_file(str(trace_file))
 link_path   = alt.LinkPath.from_csv_file(str(lp_file))
@@ -142,7 +142,7 @@ print(f"  ✓ 4 × 3.3 MW locomotives")
 # ── 4. Build simulation ─────────────────────────────────────────────────────
 print("\n[4/6] Building SetSpeedTrainSim...")
 tsb = alt.TrainSimBuilder(
-    train_id="Henderson_Full_NB",
+    train_id="Henderson_Full_SB",
     train_config=train_config,
     loco_con=loco_con,
 )
@@ -178,14 +178,14 @@ print(f"  Speed range: {df['speed_meters_per_second'].min()*2.237:.1f} – "
       f"{df['speed_meters_per_second'].max()*2.237:.1f} mph")
 
 # ── Map simulation distance → Milepost ──────────────────────────────────────
-# NB direction: MP increases with distance
+# SB direction: MP decreases with distance
 # Distance in main track = total_dist - dummy_length
-# Milepost = MP_MIN + (dist_in_main) / 1609.34
+# Milepost = MP_MAX - (dist_in_main) / 1609.34
 df['dist_in_main'] = df['total_dist_meters'] - DUMMY_LENGTH
-df['milepost'] = MP_MIN + df['dist_in_main'] / 1609.34
+df['milepost'] = MP_MAX - df['dist_in_main'] / 1609.34
 
 # Save full results
-output_csv = OUTPUT_DIR / "nb_simulation.csv"
+output_csv = OUTPUT_DIR / "sb_simulation.csv"
 df.to_csv(output_csv, index=False)
 print(f"  ✓ Results saved to {output_csv} ({len(df)} rows)")
 

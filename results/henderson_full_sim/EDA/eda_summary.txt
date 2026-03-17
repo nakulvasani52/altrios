@@ -1,13 +1,13 @@
 EDA Summary for ALTRIOS Simulation
 ==================================
-Analyzed 14054 timesteps from MP 176.83 to 322.79
+Analyzed 16321 timesteps from MP 176.83 to 346.22
 
 Metrics Overview:
 - Speed: Mean = 37.4 mph, Max = 60.0 mph
-- Grade: Range = -1.49% to 1.59%
-- Wheel Force: Max Traction = 3624 kN, Max Braking = -3917 kN
+- Grade: Range = -1.49% to 3.56%
+- Wheel Force: Max Traction = 3829 kN, Max Braking = -5786 kN
 
 Time Spent in Operations:
-- Power (Traction > 50kN): 66.9%
-- Braking (Demand < -50kN): 29.8%
-- Coasting (-50kN to 50kN): 3.3%
+- Power (Traction > 50kN): 67.0%
+- Braking (Demand < -50kN): 30.0%
+- Coasting (-50kN to 50kN): 2.9%

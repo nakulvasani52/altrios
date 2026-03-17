@@ -6,8 +6,8 @@ from pathlib import Path
 from scipy.ndimage import gaussian_filter1d
 
 # Settings
-INPUT_FILE = "results/henderson_full_sim/nb_simulation.csv"
-OUTPUT_DIR = Path("results/henderson_full_sim/braking_analysis")
+INPUT_FILE = "results/henderson_sb_sim/sb_simulation.csv"
+OUTPUT_DIR = Path("results/henderson_sb_sim/braking_analysis")
 OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 
 sns.set_style("whitegrid")
@@ -62,7 +62,7 @@ df['F_air_kN'] = df['F_air_braking_N'] / 1000
 df['F_total_brake_kN'] = (df['F_dynamic_braking_N'] + df['F_air_braking_N']) / 1000
 
 import json
-with open("data/henderson_full_meta.json") as f:
+with open("data/henderson_sb_meta.json") as f:
     meta = json.load(f)
 
 # Filter out the dummy buffer (use main corridor)
@@ -101,13 +101,14 @@ ax.axhline(0, color='gray', linewidth=0.8, linestyle='-', alpha=0.4)
 ax.set_xlabel('Milepost', fontsize=14, fontweight='bold')
 ax.set_ylabel('Braking Force (kN)', fontsize=14, fontweight='bold')
 train_info = "Train: 100 Cars, 4 Locos (~15,190 Tons)"
-ax.set_title(f'Henderson Full Run: Dynamic vs Air Braking Force Distribution\n{train_info}', 
+ax.set_title(f'Henderson SB Run: Dynamic vs Air Braking Force Distribution\n{train_info}', 
              fontsize=16, fontweight='bold', pad=20)
 
 ax.legend(loc='upper right', fontsize=12, framealpha=0.98, edgecolor='gray')
 ax.grid(True, alpha=0.3, linewidth=0.5)
 
 ax.set_xlim(mp_min, mp_max)
+ax.invert_xaxis()
 
 plt.tight_layout()
 out_file = OUTPUT_DIR / "dynamic_vs_air_braking.png"
