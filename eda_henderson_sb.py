@@ -1,3 +1,4 @@
+import matplotlib; matplotlib.use("Agg")
 #!/usr/bin/env python3
 """
 Exploratory Data Analysis (EDA) on the ALTRIOS simulation results.
@@ -52,15 +53,15 @@ print(f"Min Grade: {df_main['grade_pct'].min():.2f}%")
 # 1. Distibutions
 fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
-sns.histplot(df_main['speed_mph'], bins=40, kde=True, ax=axes[0], color='orange')
+sns.histplot(df_main['speed_mph'], bins=40, kde=True, ax=axes[0], color='#FF0000')
 axes[0].set_title('Speed Distribution (mph)')
 axes[0].set_xlabel('Speed (mph)')
 
-sns.histplot(df_main['f_whl_kn'], bins=40, kde=True, ax=axes[1], color='purple')
+sns.histplot(df_main['f_whl_kn'], bins=40, kde=True, ax=axes[1], color='#0000FF')
 axes[1].set_title('Wheel Force Distribution (kN)\nPositive=Traction, Negative=Braking')
 axes[1].set_xlabel('Wheel Force (kN)')
 
-sns.histplot(df_main['grade_pct'], bins=40, kde=True, ax=axes[2], color='blue')
+sns.histplot(df_main['grade_pct'], bins=40, kde=True, ax=axes[2], color='#FF9900')
 axes[2].set_title('Grade Distribution (%)')
 axes[2].set_xlabel('Grade (%)')
 

@@ -1,3 +1,4 @@
+import matplotlib; matplotlib.use("Agg")
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -87,14 +88,14 @@ agg = df_main.groupby('mp_group').agg({
 fig, ax = plt.subplots(figsize=(20, 6))
 
 ax.fill_between(agg['mp_group'], 0, agg['F_dynamic_kN'], 
-                 alpha=0.4, color='#E63946', label='Dynamic Braking (Locomotives)', linewidth=0)
+                 alpha=0.4, color='#FF0000', label='Dynamic Braking (Locomotives)', linewidth=0)
 ax.plot(agg['mp_group'], agg['F_dynamic_kN'], 
-        color='#E63946', linewidth=2, alpha=0.9)
+        color='#FF0000', linewidth=2, alpha=0.9)
 
 ax.fill_between(agg['mp_group'], 0, agg['F_air_kN'], 
-                 alpha=0.3, color='#1D3557', label='Air Braking (Distributed)', linewidth=0)
+                 alpha=0.3, color='#0000FF', label='Air Braking (Distributed)', linewidth=0)
 ax.plot(agg['mp_group'], agg['F_air_kN'], 
-        color='#1D3557', linewidth=2, alpha=0.9)
+        color='#0000FF', linewidth=2, alpha=0.9)
 
 ax.axhline(0, color='gray', linewidth=0.8, linestyle='-', alpha=0.4)
 
@@ -104,7 +105,6 @@ train_info = "Train: 100 Cars, 4 Locos (~15,190 Tons)"
 ax.set_title(f'Henderson Full Run: Dynamic vs Air Braking Force Distribution\n{train_info}', 
              fontsize=16, fontweight='bold', pad=20)
 
-ax.legend(loc='upper right', fontsize=12, framealpha=0.98, edgecolor='gray')
 ax.grid(True, alpha=0.3, linewidth=0.5)
 
 ax.set_xlim(mp_min, mp_max)

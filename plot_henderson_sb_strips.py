@@ -1,3 +1,4 @@
+import matplotlib; matplotlib.use("Agg")
 #!/usr/bin/env python3
 """
 Generate presentation-quality strip charts for the full Henderson subdivision
@@ -29,11 +30,18 @@ plt.rcParams.update({
     "axes.facecolor": "white",
 })
 
-BLUE   = "#1f77b4"
-ORANGE = "#ff7f0e"
-GREEN  = "#2ca02c"
-RED    = "#d62728"
-PURPLE = "#9467bd"
+COLORS = ["#FF0000", "#0000FF", "#FF9900", "#24E780", "#00FFFF", "#FF00FF", "#993366", "#969696"]
+C_CURVE=COLORS[0]
+C_GRADE=COLORS[1]
+C_SPEED=COLORS[2]
+F_GRADE=COLORS[3]
+F_CURVE=COLORS[4]
+F_ROLL=COLORS[5]
+C_DEMAND=COLORS[6]
+
+
+
+
 
 SIM_CSV  = Path("results/henderson_sb_sim/sb_simulation.csv")
 SEG_CSV  = Path("data/henderson_sb_segments.csv")
@@ -151,10 +159,13 @@ def plot_full_4panel(sim_df, geo_df, xlim, train_info):
         gridspec_kw={"hspace": 0.35}
     )
 
-    FS_TITLE, FS_LABEL, FS_TICK = 16, 14, 12
-    C_CURVE = (1.0, 0.0, 0.0)
-    C_GRADE = (0.0, 0.0, 1.0)
-    C_SPEED = (1.0, 0.6, 0.0)
+    FS_TITLE, FS_LABEL, FS_TICK = 20, 16, 14
+    # Shared y-axis limits matching NB for cross-simulation comparison
+    RES_YLIM = (-2000, 3000)   # kN
+    DEMAND_YLIM = (-2500, 2500)  # kN
+    
+    
+    
 
     # ── Panel 1: Geometry ────────────────────────────────────────────────────
     curve_abs = np.abs(merged['true_curve_deg'].values)
@@ -163,7 +174,7 @@ def plot_full_4panel(sim_df, geo_df, xlim, train_info):
     ax1.set_ylim(0, max(float(np.nanmax(curve_abs)) * 1.25, 1.0))
     ax1.tick_params(axis="y", labelsize=FS_TICK, colors=C_CURVE)
     ax1.set_title(
-        f"Henderson Subdivision SB: Infrastructure Geometry (MP {xlim[1]:.0f}–{xlim[0]:.0f}) | {train_info}",
+        f"Henderson Subdivision SB: Infrastructure Geometry (MP {xlim[0]:.0f}–{xlim[1]:.0f}) | {train_info}",
         fontsize=FS_TITLE, fontweight="bold", pad=6)
 
     ax1b = ax1.twinx()
@@ -186,30 +197,28 @@ def plot_full_4panel(sim_df, geo_df, xlim, train_info):
     ax2.spines["top"].set_alpha(0.3)
 
     # ── Panel 3: Resistance Breakdown ────────────────────────────────────────
-    ax3.plot(x, merged['f_grade_kn'],  color=BLUE,   linewidth=1.5, label="Grade")
-    ax3.plot(x, merged['f_curve_kn'],  color=RED,    linewidth=1.5, label="Curve")
+    ax3.plot(x, merged['f_grade_kn'],  color=F_GRADE,   linewidth=1.5, label="Grade")
+    ax3.plot(x, merged['f_curve_kn'],  color=F_CURVE,    linewidth=1.5, label="Curve")
     f_roll_aero = merged['f_roll_kn'] + merged['f_aero_kn']
-    ax3.plot(x, f_roll_aero,           color=GREEN,  linewidth=1.5, label="Rolling+Aero")
+    ax3.plot(x, f_roll_aero,           color=F_ROLL,  linewidth=1.5, label="Rolling+Aero")
     ax3.set_title("Resistance Forces", fontsize=FS_TITLE, fontweight="bold", pad=6)
     ax3.set_ylabel("Force (kN)", fontweight="bold", fontsize=FS_LABEL)
+    ax3.set_ylim(*RES_YLIM)
     ax3.tick_params(axis="both", labelsize=FS_TICK)
-    ax3.legend(loc="upper right", fontsize=10, ncol=3, frameon=True)
     ax3.spines["top"].set_alpha(0.3)
 
     # ── Panel 4: Track Demand ────────────────────────────────────────────────
     demand = merged['track_long_kn'].values
-    ax4.plot(x, demand, color=PURPLE, linewidth=1.5, label="Track Demand")
+    ax4.plot(x, demand, color=C_DEMAND, linewidth=1.5, label="Track Demand")
     ax4.axhline(0, color='gray', linewidth=0.8, linestyle='--', alpha=0.4)
     ax4.set_title("Track Longitudinal Demand", fontsize=FS_TITLE, fontweight="bold", pad=6)
     ax4.set_ylabel("Demand (kN)", fontweight="bold", fontsize=FS_LABEL)
-    ax4.set_ylim(*_sym_ylim(demand))
+    ax4.set_ylim(*DEMAND_YLIM)
     ax4.set_xlabel("Milepost", fontweight="bold", fontsize=FS_LABEL)
     ax4.tick_params(axis="both", labelsize=FS_TICK)
     ax4.spines["top"].set_alpha(0.3)
 
     ax1.set_xlim(*xlim)
-    ax1.invert_xaxis()
-
     fig.tight_layout()
     fname = OUT_DIR / "henderson_full_sb_4panel_strip.png"
     fig.savefig(fname, bbox_inches="tight")
@@ -228,9 +237,9 @@ def plot_geometry_speed(sim_df, geo_df, xlim, train_info):
         gridspec_kw={"height_ratios": [1.4, 1], "hspace": 0.42}
     )
 
-    C_CURVE = (1.0, 0.0, 0.0)
-    C_GRADE = (0.0, 0.0, 1.0)
-    C_SPEED = (1.0, 0.6, 0.0)
+    
+    
+    
     FS_TITLE, FS_LABEL, FS_TICK = 16, 14, 12
 
     curve_abs = np.abs(merged['true_curve_deg'].values)
@@ -257,7 +266,6 @@ def plot_geometry_speed(sim_df, geo_df, xlim, train_info):
     ax_bot.set_ylim(0, max(float(np.nanmax(speed)) * 1.18, 10.0))
 
     ax_top.set_xlim(*xlim)
-    ax_top.invert_xaxis()
     fig.tight_layout()
     fname = OUT_DIR / "henderson_full_sb_geometry_speed.png"
     fig.savefig(fname, bbox_inches="tight")
@@ -275,15 +283,13 @@ def plot_resistance_stacked(sim_df, xlim, train_info):
                  d['f_grade_kn'], d['f_curve_kn'],
                  d['f_roll_kn'], d['f_aero_kn'],
                  labels=['Grade', 'Curve', 'Rolling', 'Aero'],
-                 alpha=0.65, colors=[BLUE, RED, PURPLE, GREEN])
+                 alpha=0.65, colors=[F_GRADE, F_CURVE, F_ROLL, COLORS[7]])
     ax.set_title(
         f"Henderson SB: Resistance Force Breakdown (MP {xlim[1]:.0f}–{xlim[0]:.0f}) | {train_info}",
         fontsize=16, fontweight="bold")
     ax.set_xlabel("Milepost", fontweight="bold", fontsize=14)
     ax.set_ylabel("Resistance Forces (kN)", fontweight="bold", fontsize=14)
     ax.set_xlim(*xlim)
-    ax.invert_xaxis()
-    ax.legend(loc="upper left", frameon=True, fontsize=11, ncol=2)
 
     fig.tight_layout()
     fname = OUT_DIR / "henderson_full_sb_resistance_stacked.png"
@@ -298,14 +304,14 @@ def plot_demand(sim_df, xlim, train_info):
     demand = d['track_long_kn'].values
 
     fig, ax = plt.subplots(figsize=(20, 5))
-    ax.plot(x, demand, color=PURPLE, linewidth=1.8, label="Track Demand")
+    ax.plot(x, demand, color=C_DEMAND, linewidth=1.8, label="Track Demand")
     ax.axhline(0, color='gray', linewidth=0.8, linestyle='--', alpha=0.4)
 
     # Annotate top-3 peaks
     top = d.nlargest(3, 'track_long_kn')[['mp_group', 'track_long_kn']]
     for _, r in top.iterrows():
         mp, val = float(r['mp_group']), float(r['track_long_kn'])
-        ax.scatter([mp], [val], s=60, color=PURPLE, edgecolor='white', zorder=6)
+        ax.scatter([mp], [val], s=60, color=C_DEMAND, edgecolor='white', zorder=6)
         ax.text(mp + 0.5, val + 15, f"MP {mp:.1f}\n{val:.0f} kN",
                 fontsize=9, ha="left",
                 bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="gray",
@@ -317,9 +323,7 @@ def plot_demand(sim_df, xlim, train_info):
     ax.set_xlabel("Milepost", fontweight="bold", fontsize=14)
     ax.set_ylabel("Track Demand (kN)", fontweight="bold", fontsize=14)
     ax.set_xlim(*xlim)
-    ax.invert_xaxis()
     ax.set_ylim(*_sym_ylim(demand))
-    ax.legend(loc="upper right", frameon=True, fontsize=11)
 
     fig.tight_layout()
     fname = OUT_DIR / "henderson_full_sb_track_demand.png"
